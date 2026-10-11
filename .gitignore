@@ -29,3 +29,14 @@ Thumbs.db
 # Ignore reports and config directories
 config/
 reports/
+# --- secrets and local state: never committed ---
+.env
+*.env
+.env.*
+!.env.example
+.claude/CLAUDE.local.md
+.claude/settings.local.json
+.claude/worktrees/
+.claude/launch.json
+*.pem
+*.key
