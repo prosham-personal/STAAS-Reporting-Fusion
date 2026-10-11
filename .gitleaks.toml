@@ -1,0 +1,6 @@
+# Secret scanning runs in CI. STAAS credentials live in the gitignored config/ dir, never in tracked files.
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''\.gitleaks\.toml$''']

@@ -1,0 +1,24 @@
+[project]
+name = "staas-reporting-fusion"
+version = "0.0.0"
+description = "Reporting and chargeback tagging for Pure Storage STaaS (Fusion) volumes"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2.3",
+    "py-pure-client>=1.66.0",
+    "urllib3>=2.2.3",
+    "openpyxl>=3.1.5",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0.0", "pyyaml>=6.0", "pytest-cov>=4.0.0", "mypy>=1.0.0", "black>=24.0.0"]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-m \"not live\""
+markers = ["live: read-only tests against a real Fusion array; need PURE_* env vars (run with -m live)"]
