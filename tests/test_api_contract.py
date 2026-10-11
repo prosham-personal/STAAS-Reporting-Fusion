@@ -7,6 +7,7 @@ https://code.purestorage.com/swagger/). Set STAAS_API_VERSION to test another ve
 is skipped when the spec cannot be fetched.
 """
 import ast
+import functools
 import importlib
 import inspect
 import os
@@ -19,11 +20,6 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCRIPTS = ["staas-reporting.py", "staas-tag_vols.py", "staas_common.py"]
 VERSION = os.environ.get("STAAS_API_VERSION", "2.42")
-SPEC_URL = (
-    "https://raw.githubusercontent.com/PureStorage-OpenConnect/swagger/master/"
-    f"definitions/oas2.0/FA{VERSION}.spec.yaml"
-)
-CACHE = ROOT / ".cache" / f"FA{VERSION}.spec.yaml"
 VERBS = ("get", "post", "put", "patch", "delete")
 # Python-only keywords the SDK adds to every call; they are not REST parameters.
 SDK_KWARGS = {"async_req", "_preload_content", "_request_timeout", "x_request_id", "authorization"}
@@ -35,33 +31,48 @@ SDK_KWARGS = {"async_req", "_preload_content", "_request_timeout", "x_request_id
 KNOWN_SPEC_DEVIATIONS = {
     # /volumes/space filters by `ids` in the spec; `names` is an SDK convenience.
     ("get_volumes_space", "names"),
-    # /realms/space is array-local in the spec and takes no context_names.
-    ("get_realms_space", "context_names"),
 }
 
 
 # Calls the installed SDK rejects (TypeError at runtime): real bugs in the scripts, tracked
 # here as expected failures until fixed. Remove the entry in the same change as the fix.
-KNOWN_SDK_BUGS = {
-    # py-pure-client FA_2_42..FA_2_58 get_realms_space() takes ids/names only, no context_names.
-    ("get_realms_space", "context_names"),
+KNOWN_SDK_BUGS = set()
+
+# Endpoints the scripts only call on newer REST versions (guarded at runtime); tested
+# against that version instead of VERSION.
+MIN_REST_VERSION = {
+    "get_realms": "2.52",  # context_names added; guarded by REALMS_MIN_REST_VERSION
 }
 
 
-@pytest.fixture(scope="session")
-def operations():
+def version_for(method):
+    """The REST version a call is tested against: the newer of VERSION and its minimum."""
+    key = lambda v: tuple(int(x) for x in v.split("."))
+    return max(VERSION, MIN_REST_VERSION.get(method, VERSION), key=key)
+
+
+def spec_url(version):
+    return (
+        "https://raw.githubusercontent.com/PureStorage-OpenConnect/swagger/master/"
+        f"definitions/oas2.0/FA{version}.spec.yaml"
+    )
+
+
+@functools.lru_cache(maxsize=None)
+def load_operations(version):
     """Map SDK method name -> set of accepted parameter names, built from the spec."""
-    if not CACHE.exists():
+    cache = ROOT / ".cache" / f"FA{version}.spec.yaml"
+    if not cache.exists():
         try:
-            with urllib.request.urlopen(SPEC_URL, timeout=30) as resp:
+            with urllib.request.urlopen(spec_url(version), timeout=30) as resp:
                 data = resp.read()
         except OSError as e:
-            pytest.skip(f"cannot fetch {SPEC_URL}: {e}")
-        CACHE.parent.mkdir(exist_ok=True)
-        CACHE.write_bytes(data)
-    spec = yaml.safe_load(CACHE.read_text())
+            pytest.skip(f"no oas2.0 spec for FA {version} ({e}); newer specs are OpenAPI 3, so only the SDK signature test covers it")
+        cache.parent.mkdir(exist_ok=True)
+        cache.write_bytes(data)
+    spec = yaml.safe_load(cache.read_text())
     shared = spec.get("parameters", {})
-    prefix = f"/api/{VERSION}/"
+    prefix = f"/api/{version}/"
 
     def param_names(params):
         names = set()
@@ -106,13 +117,15 @@ def test_calls_were_found():
 
 
 @pytest.mark.parametrize("file,line,method,kwargs", CALLS, ids=[f"{c[0]}:{c[1]}:{c[2]}" for c in CALLS])
-def test_call_matches_spec(operations, file, line, method, kwargs):
+def test_call_matches_spec(file, line, method, kwargs):
     # get_rest_version is an SDK helper (GET /api/api_version), not a versioned endpoint.
     if method == "get_rest_version":
         pytest.skip("SDK helper")
-    assert method in operations, f"{method} is not an endpoint in FA {VERSION}"
+    v = version_for(method)
+    operations = load_operations(v)
+    assert method in operations, f"{method} is not an endpoint in FA {v}"
     unknown = {k for k in set(kwargs) - operations[method] - SDK_KWARGS if (method, k) not in KNOWN_SPEC_DEVIATIONS}
-    assert not unknown, f"{file}:{line} {method} passes parameters FA {VERSION} does not define: {sorted(unknown)}"
+    assert not unknown, f"{file}:{line} {method} passes parameters FA {v} does not define: {sorted(unknown)}"
 
 
 @pytest.mark.parametrize("file,line,method,kwargs", CALLS, ids=[f"{c[0]}:{c[1]}:{c[2]}" for c in CALLS])
@@ -120,9 +133,10 @@ def test_call_matches_sdk_signature(file, line, method, kwargs):
     """The installed py-pure-client must accept exactly these keyword arguments."""
     if method == "get_rest_version":
         pytest.skip("SDK helper")
-    module = importlib.import_module(f"pypureclient.flasharray.FA_{VERSION.replace('.', '_')}.client")
+    v = version_for(method)
+    module = importlib.import_module(f"pypureclient.flasharray.FA_{v.replace('.', '_')}.client")
     fn = getattr(module.Client, method, None)
-    assert fn is not None, f"py-pure-client FA {VERSION} has no {method}"
+    assert fn is not None, f"py-pure-client FA {v} has no {method}"
     params = inspect.signature(fn).parameters
     if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
         return

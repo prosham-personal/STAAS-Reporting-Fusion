@@ -48,7 +48,6 @@ import urllib3
 import pprint as pp
 from datetime import datetime
 from openpyxl import load_workbook
-from packaging.version import Version
 from staas_common import (
     parse_arguments,
     initialise_client,
@@ -56,12 +55,13 @@ from staas_common import (
     check_api_version,
     list_fleets,
     list_members,
-    pypureclient
 )
 
 
 debug = 3
-REALMS_VERSION = "1.66"
+# get_realms() accepts context_names (needed to query one fleet member) from REST API 2.52.
+# get_realms_space() is local-array only and cannot be pointed at a fleet member.
+REALMS_MIN_REST_VERSION = 2.52
 
 # Header rows for the reporting spreadsheet are defined here
 VOLUME_HEADER_ROWS = [
@@ -214,6 +214,7 @@ def report_arrays(client, fleet, fleet_members):
     """
     fleet_space_report = {}
     realm_space_report = {}
+    realms_supported = float(client.get_rest_version()) >= REALMS_MIN_REST_VERSION
 
     for fleet_member in fleet_members:
         # Report array space usage
@@ -235,13 +236,13 @@ def report_arrays(client, fleet, fleet_members):
             print(f"Failed to retrieve space usage. Status code: {response.status_code}, Error: {response.errors}")
 
         # Check API version before reporting realm space usage
-        if Version(pypureclient.__version__) >= Version(REALMS_VERSION):
+        if realms_supported:
             connection_type_response = client.get_fleets_members()
             if connection_type_response.status_code == 200:
                 for member in connection_type_response.items:
                     if member.member.name == fleet_member:  # and member.member.is_local == 'true':
                         # Report realm space usage
-                        response = client.get_realms_space(context_names=[fleet_member])
+                        response = client.get_realms(context_names=[fleet_member])
                         if response.status_code == 200:
                             if debug >= 2:
                                 print(f"Space usage for realms in array {fleet_member}")
@@ -261,7 +262,7 @@ def report_arrays(client, fleet, fleet_members):
                 print(f"Failed to retrieve connection type. Status code: {connection_type_response.status_code}, Error: {connection_type_response.errors}")
         else:
             if debug >=2:
-                print("Skipping realm space report as pypureclient version is too low")
+                print(f"Skipping realm space report as REST API version is below {REALMS_MIN_REST_VERSION}")
 
     return fleet_space_report, realm_space_report
 
