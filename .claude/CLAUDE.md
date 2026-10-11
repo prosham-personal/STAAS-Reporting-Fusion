@@ -44,6 +44,7 @@ Paul's personal GitHub account (`prosham-personal`).
 ## Standards
 
 - Python 3.12 managed with `uv`: dependencies in `pyproject.toml`, locked in the committed `uv.lock`, installed to the gitignored `.venv` by `uv sync`. Run scripts with `uv run`; tests with `uv run pytest -q tests`. Do not add `requirements.txt`.
+- API tests: `tests/test_api_contract.py` checks every `client.*` call against the published FlashArray spec (PureStorage-OpenConnect/swagger, `STAAS_API_VERSION`, default 2.42) and the installed SDK; no array needed. `tests/test_live_array.py` is read-only smoke tests against a lab array, skipped unless `PURE_FUSION_SERVER`, `PURE_USER_NAME` and `PURE_API_TOKEN` are set; run with `uv run pytest -m live`. Never point live tests at production or add write calls to them.
 - Commits: `scope: imperative summary` with bullets; scopes `reporting`, `tagging`,
   `common`, `ci`, `docs`. Signing follows the workstation; never disable it.
 

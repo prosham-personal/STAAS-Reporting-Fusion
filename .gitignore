@@ -40,3 +40,4 @@ reports/
 .claude/launch.json
 *.pem
 *.key
+.cache/
