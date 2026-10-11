@@ -43,7 +43,7 @@ Paul's personal GitHub account (`prosham-personal`).
 
 ## Standards
 
-- Python; tests with `pytest` under `tests/` (`python -m pytest -q tests`).
+- Python 3.12 managed with `uv`: dependencies in `pyproject.toml`, locked in the committed `uv.lock`, installed to the gitignored `.venv` by `uv sync`. Run scripts with `uv run`; tests with `uv run pytest -q tests`. Do not add `requirements.txt`.
 - Commits: `scope: imperative summary` with bullets; scopes `reporting`, `tagging`,
   `common`, `ci`, `docs`. Signing follows the workstation; never disable it.
 

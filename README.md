@@ -209,7 +209,7 @@ export PURE_API_TOKEN=your_fusion_api_token
 
 ## Additional Notes
 
-- Both scripts require Python 3 and the dependencies listed in `requirements.txt`.
+- Both scripts require Python 3 and the dependencies in `pyproject.toml` (locked in `uv.lock`). Run `uv sync` once to create `.venv`, then `uv run staas-reporting.py ...`.
 - Ensure you have write access to the report directory and the config file is accessible.
 - For more details, see the docstrings and comments in each script.
 The records on each sheet are date/time stamped so that space can be rated externally over time.
