@@ -6,20 +6,20 @@ This package adds chargeback metadata to block volumes on a fleet of Pure Storag
 
 # Roadmap
 - **FlashBlade is not supported at this time (Fusion support on FlashBlade has been released, for FlashBlade//S and //E on 4.5.6, but no tagging - Directory reporting is on the current roadma p for this package)
-- **Filesystems/Directories are being at this time (not possible to report with Fusion yet, or tag them)
+- **Filesystems/Directories are not supported at this time (not possible to report with Fusion yet, or tag them)
 - **FOCUS Rating output is a future consideration. See [https://focus.finops.org/what-is-focus/]
 - **API Versioning to aid in change control
 
 ## Dependencies and Installation
 
-- **Purity//FA Rest API**: Minimum version 2.42 (Purity//FA 6.8.5 and above) to access the Fusion API.
+- **Purity//FA Rest API**: Minimum version 2.42 (Purity//FA 6.8.5 and above) to access the Fusion API; the realm space report requires REST API 2.52 and is skipped on older arrays.
 - **py-pure-client Python SDK**: Minimum version 1.66.0, which includes support for the required API calls. See [py-pure-client](https://github.com/PureStorage-OpenConnect/py-pure-client).
 
 ## Runtime Requirements
 
 The scripts require the following arguments:
 - `--config` (both scripts - location of a configuration spreadsheet)
-- `--report` (folder for output reports, only for `staas-reporting.py`)
+- `--reportdir` (folder for output reports, only for `staas-reporting.py`)
 
 The Username and API Token must be stored in environment variables for the user running the script:
 - `PURE_USER_NAME`

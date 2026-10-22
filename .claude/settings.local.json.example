@@ -1,0 +1,12 @@
+{
+  "env": {
+    "GH_CONFIG_DIR": "/path/to/home/.config/gh-prosham",
+    "GIT_CONFIG_COUNT": "3",
+    "GIT_CONFIG_KEY_0": "gpg.format",
+    "GIT_CONFIG_VALUE_0": "ssh",
+    "GIT_CONFIG_KEY_1": "user.signingkey",
+    "GIT_CONFIG_VALUE_1": "/path/to/home/.ssh/your_signing_key.pub",
+    "GIT_CONFIG_KEY_2": "commit.gpgsign",
+    "GIT_CONFIG_VALUE_2": "true"
+  }
+}
