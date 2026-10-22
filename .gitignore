@@ -7,7 +7,6 @@ __pycache__/
 venv/
 env/
 .venv/
-.env/
 
 # Ignore Jupyter Notebook checkpoints
 .ipynb_checkpoints/
@@ -30,7 +29,6 @@ Thumbs.db
 config/
 reports/
 # --- secrets and local state: never committed ---
-.env
 *.env
 .env.*
 !.env.example
