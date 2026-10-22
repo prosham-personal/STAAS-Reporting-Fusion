@@ -4,6 +4,10 @@ Operating rules for Claude Code sessions in this repository. Portable: true for
 any engineer, machine or account. Workstation specifics go in the gitignored
 `.claude/CLAUDE.local.md` and `.claude/settings.local.json`; never here.
 
+@./CLAUDE.local.md
+
+Copy `.claude/settings.local.json.example` to `.claude/settings.local.json` and fill in the placeholder paths.
+
 ## What this repo is
 
 Python tooling that reports on and tags STaaS (storage) volumes: `staas-reporting.py`,
