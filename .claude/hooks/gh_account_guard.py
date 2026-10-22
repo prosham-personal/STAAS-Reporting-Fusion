@@ -21,12 +21,31 @@ import sys
 
 EXPECTED = "prosham-personal"
 
+# A command position: start of line, after a separator/subshell opener, or just
+# inside a quote (so `bash -c 'gh ...'` and `sh -c "... ; gh ..."` are seen).
+_BOUNDARY = r"(?:^|[\n;&|(`'\"]|\$\()\s*"
+_ASSIGN = r"[A-Za-z_][A-Za-z0-9_]*=\S*\s+"
+# Launchers that run the next word as a command: env, command, sudo, xargs, ...
+# Their options are skipped; an option may take one argument (sudo -u root, xargs -n 1).
+# `command -v gh` only looks the binary up, so -v/-V is not skipped for it.
+_WRAPPER = (
+    r"(?:(?:env|command|sudo|xargs|exec|nohup|time)\b"
+    r"(?:\s+(?!-[vV]\b)-\S+(?:\s+(?!gh\b)[^\s\-;&|'\"]\S*)?|\s+" + _ASSIGN.strip() + r")*\s+)"
+)
+_GH_PATH = r"(?:[^\s;&|'\"()]*/)?gh"
 GH_CALL = re.compile(
-    r"(?:^|[\n;&|(`]|\$\()\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*gh(?=\s|$)"
+    _BOUNDARY + r"(?:" + _ASSIGN + r"|" + _WRAPPER + r")*" + _GH_PATH + r"(?=\s|$|['\"])(?P<rest>[^\n;&|]*)"
 )
-GH_AUTH = re.compile(
-    r"(?:^|[\n;&|(`]|\$\()\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*gh\s+auth\b"
-)
+GH_AUTH_REST = re.compile(r"^\s*auth\b")
+
+
+def needs_account_check(cmd):
+    """True if `cmd` runs `gh` for anything other than `gh auth ...`.
+
+    Every gh invocation is inspected, so `gh auth status && gh issue list`
+    is still checked. `gh auth ...` stays allowed: it is how the account is fixed.
+    """
+    return any(not GH_AUTH_REST.match(m.group("rest")) for m in GH_CALL.finditer(cmd))
 
 
 def hosts_yml():
@@ -68,7 +87,7 @@ def deny(reason):
 def main():
     data = json.load(sys.stdin)
     cmd = (data.get("tool_input") or {}).get("command") or ""
-    if not GH_CALL.search(cmd) or GH_AUTH.search(cmd):
+    if not needs_account_check(cmd):
         return
 
     if os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
