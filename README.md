@@ -29,7 +29,7 @@ These credentials must have array admin levels on all fleet members to run the t
 
 For security reasons, two different IDs can be used for the reporting server OS and Purity access level to separate the permissions for tagging volumes and generating reporting spreadsheets.
 
-Configuration data is retrieved from the spreadsheet `STAAS_Tagging.xlsx`, in the worksheet named `Fleet` (example provided - customize for your site).
+Configuration data is retrieved from the spreadsheet `STAAS_Config.xlsx`, in the worksheet named `Fleet` (example provided - customize for your site).
 
 The `FUSION_SERVER` is the DNS entry for a server that is a member of the fleet on which you are reporting. For reliability, it can be a DNS round-robin entry of more than one of the Management IP addresses of the fleet members. The `NAMESPACE` entry in the configuration is used to store the chargeback metadata entries for each volume. These are retrieved at run-time.
 
@@ -42,7 +42,8 @@ The worksheet named `Tagging_map` contains the rules for the tagging process, wh
 -`realm`
 -`pod`
 -`workload`
--`hostgroup`
+-`host_group`
+-`host`
 
 These are in decreasing order of precedence - the first match on a volume wins the tag for that container.
 
@@ -54,8 +55,8 @@ An example spreadsheet is supplied, customise to your own requirements
 Reporting spreadsheets are created in the reporting directory if they do no exist. Each time the reporting script is run, it will append timestamped records to the appropriate worksheet
 
 The script `staas-reporting.py` will connect to the fleet and generate (or append to) a spreadsheets named:
--`Space_Report-Volumes-YYYY-MM.xlsx`
--`Space_Report-Directories-YYYY-MM.xlsx`
+-`Space-Report-Volumes-YYYY-MM.xlsx`
+-`Space-Report-Directories-YYYY-MM.xlsx`
 
 The Volume Reporting script has one worksheet per chargeback code.
 The records on each sheet are date/time stamped so that space can be rated externally over time.
